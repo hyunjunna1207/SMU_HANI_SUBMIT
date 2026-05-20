@@ -702,7 +702,7 @@ function buildPdfFromPages(pages) {
   const out = new Uint8Array(totalBytes);
   let off = 0;
   for (const p of parts) { out.set(p, off); off += p.length; }
-  return new Blob([out], { type: "application/pdf" });
+  return new Blob([out], { type: "application/octet-stream" });
 }
 
 function resetAllFiles() {
