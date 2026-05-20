@@ -564,11 +564,17 @@ document.getElementById("btn-build-pdf").addEventListener("click", async functio
   this.textContent = "⏳ PDF 변환 중...";
   try {
     const blob = await imagesToPdf(copilotImages);
-    const a = document.createElement("a");
-    a.href = URL.createObjectURL(blob);
-    a.download = "copilot_quiz_" + sid + "_" + week + ".pdf";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    showToast("PDF 다운로드 완료","ok");
+    // Base64 Data URL 방식: Safari에서 Blob URL 미리보기 우회
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const dataUrl = e.target.result.replace("application/octet-stream", "application/octet-stream");
+      const a = document.createElement("a");
+      a.href = dataUrl;
+      a.download = "copilot_quiz_" + sid + "_" + week + ".pdf";
+      document.body.appendChild(a); a.click(); document.body.removeChild(a);
+      showToast("PDF 다운로드 완료","ok");
+    };
+    reader.readAsDataURL(blob);
   } catch(err) {
     showToast("PDF 변환 실패: " + err.message, "err");
   } finally {
