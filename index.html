@@ -194,7 +194,7 @@ canvas{display:none;}
     <div class="card-head">🖼️ 이미지 파일 <span style="font-weight:400;font-size:.75rem;opacity:.8">(선택 · 자동 압축)</span></div>
     <div class="card-body">
       <div class="upload-zone" id="upload-zone">
-        <input type="file" id="inp-file" accept="image/*" capture="environment">
+        <input type="file" id="inp-file" accept="image/*">
         <div class="upload-icon">📎</div>
         <p><strong>탭하여 이미지 선택</strong><br>선택 즉시 자동 압축 · JPG/PNG</p>
       </div>
@@ -244,7 +244,7 @@ canvas{display:none;}
   <div class="overlay-box">
     <div class="overlay-title">📋 제출 방법 안내</div>
     <ul class="step-list" id="overlay-steps"></ul>
-    <button class="btn-confirm" id="btn-confirm">확인했습니다 →</button>
+    <a class="btn-confirm" id="btn-confirm" href="#" target="_blank" rel="noopener" style="display:block;text-align:center;text-decoration:none;">확인했습니다 →</a>
   </div>
 </div>
 
@@ -379,6 +379,7 @@ function switchForm(key) {
 }
 
 document.getElementById("sel-subject").addEventListener("change", updateSubtasks);
+document.getElementById("sel-subject").addEventListener("input",  updateSubtasks);
 function updateSubtasks() {
   if (currentForm !== "flashcard") return;
   const subj  = document.getElementById("sel-subject").value;
@@ -763,19 +764,23 @@ function buildOverlay() {
     ? "<b>이메일</b> 입력 후 <b>다음</b>을 눌러주세요.<br>과목 선택 이후 섹션은 직접 입력이 필요합니다"
     : "<b>이메일</b> 항목을 직접 입력하고 <b>다음</b>을 눌러 마지막 페이지로 이동하세요";
   document.getElementById("overlay-steps").innerHTML =
-    '<li class="step-item"><span class="step-num">1</span><span><b>확인했습니다</b>를 눌러 구글 폼으로 이동하세요</span></li>' +
+    '<li class="step-item"><span class="step-num">1</span><span><b>확인했습니다</b>를 눌러 구글 폼으로 이동하세요<br><span style="font-size:.78rem;color:var(--muted)">⚠️ 초안 팝업이 뜨면 <b>계속</b>을 누르세요</span></span></li>' +
     '<li class="step-item"><span class="step-num">2</span><span>' + step2 + '</span></li>' +
     '<li class="step-item"><span class="step-num">3</span><span>마지막 페이지에서 다운로드해둔 파일을 첨부하고 <b>제출</b>을 완료하세요</span></li>';
 }
 
-document.getElementById("btn-confirm").addEventListener("click", function() {
+// iOS Safari 호환: <a> 태그의 href를 mousedown/touchstart 시점에 미리 설정
+// → 클릭 이벤트 발생 전에 href가 확정되어 팝업 차단 없이 새 탭 열림
+const confirmBtn = document.getElementById("btn-confirm");
+function prepareConfirmLink() {
+  if (pendingFormUrl) confirmBtn.href = pendingFormUrl;
+}
+confirmBtn.addEventListener("mousedown",  prepareConfirmLink);
+confirmBtn.addEventListener("touchstart", prepareConfirmLink, { passive: true });
+confirmBtn.addEventListener("click", function() {
   document.getElementById("overlay").classList.remove("show");
-  if (pendingFormUrl) {
-    const a = document.createElement("a");
-    a.href = pendingFormUrl; a.target = "_blank"; a.rel = "noopener";
-    document.body.appendChild(a); a.click(); document.body.removeChild(a);
-    pendingFormUrl = null;
-  }
+  pendingFormUrl = null;
+  // href="#"로 복원은 다음 폼 열기 때 덮어씌워짐
 });
 
 // ── 토스트 ────────────────────────────────────
