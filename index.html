@@ -3,7 +3,11 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>세명대 과제 제출 도우미</title>
+<link rel="apple-touch-icon" href="icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="한의대제출">
+<title>한의대 과제 제출 도우미</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
 <style>
@@ -112,7 +116,7 @@ canvas{display:none;}
 <body>
 
 <header class="app-header">
-  <h1>📋 세명대 과제 제출 도우미</h1>
+  <h1>📋 한의대 과제 제출 도우미</h1>
   <p>정보를 한 번 저장하면 다음부터 자동으로 불러옵니다</p>
 </header>
 
@@ -194,7 +198,7 @@ canvas{display:none;}
     <div class="card-head">🖼️ 이미지 파일 <span style="font-weight:400;font-size:.75rem;opacity:.8">(선택 · 자동 압축)</span></div>
     <div class="card-body">
       <div class="upload-zone" id="upload-zone">
-        <input type="file" id="inp-file" accept="image/*">
+        <input type="file" id="inp-file">
         <div class="upload-icon">📎</div>
         <p><strong>탭하여 이미지 선택</strong><br>선택 즉시 자동 압축 · JPG/PNG</p>
       </div>
@@ -219,7 +223,7 @@ canvas{display:none;}
     <div class="card-head">🤖 이미지 → PDF 변환 <span style="font-weight:400;font-size:.75rem;opacity:.8">(선택 · 순서대로 변환)</span></div>
     <div class="card-body">
       <div class="upload-zone" id="copilot-zone" style="margin-bottom:0">
-        <input type="file" id="inp-copilot" accept="image/*" multiple>
+        <input type="file" id="inp-copilot" multiple>
         <div class="upload-icon">🖼️</div>
         <p><strong>이미지 파일 선택</strong> (여러 장 가능)<br>드래그로 순서 조정 · 선택 순서대로 PDF 변환</p>
       </div>
