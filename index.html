@@ -263,7 +263,13 @@ const FORMS = {
   flashcard: {
     label: "플래시카드",
     formId: "1FAIpQLSdDC_mEJk1uk5Hd37kEvtpBKV2k-UA3H36EXPh0JBwQFPm3ZA",
-    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", subtask:"entry.792164103_sentinel", week:"entry.404105125_sentinel" },
+    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", subtask:"entry.792164103_sentinel" },
+    weekEntries: {
+      "한의학용어(한문 제외)": "entry.654998830_sentinel",
+      "한문":                  "entry.536031525_sentinel",
+      "한자급수":              "entry.1354053459_sentinel",
+      "의학용어(최수지 교수)": "entry.404105125_sentinel",
+    },
     subjects: ["한의학용어와한문1 (예1)","의학한문1 (예2)","원전2 (본1)"],
     subtasks: { "한의학용어와한문1 (예1)":["한의학용어(한문 제외)","한문","한자급수","의학용어(최수지 교수)"], "의학한문1 (예2)":[], "원전2 (본1)":[] },
     weeks: ["1주차","2주차","3주차","4주차","5주차","6주차","7주차","9주차","10주차","11주차","12주차","13주차","14주차"],
@@ -750,7 +756,13 @@ document.getElementById("btn-submit").addEventListener("click", function() {
   params.set(cfg.entries.studentId, sid);
   params.set(strip(cfg.entries.subject), subj);
   if (cfg.entries.subtask && subtask) params.set(strip(cfg.entries.subtask), subtask);
-  params.set(strip(cfg.entries.week), week);
+  // 플래시카드는 세부과제별로 week entry가 다름
+  if (currentForm === "flashcard" && cfg.weekEntries && subtask) {
+    const weekEntry = cfg.weekEntries[subtask];
+    if (weekEntry) params.set(strip(weekEntry), week);
+  } else {
+    params.set(strip(cfg.entries.week), week);
+  }
   if (currentForm === "praise") {
     params.set(cfg.entries.praiseTarget,  praiseTarget);
     params.set(cfg.entries.praiseContent, praiseContent);
