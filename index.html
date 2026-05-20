@@ -1,0 +1,793 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>세명대 과제 제출 도우미</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:       #faf9f7;
+  --surface:  #ffffff;
+  --border:   #e8e4de;
+  --accent:   #2d6a4f;
+  --accent2:  #52b788;
+  --warn:     #e76f51;
+  --text:     #1a1a1a;
+  --muted:    #888;
+  --mono:     'JetBrains Mono', monospace;
+  --sans:     'Noto Sans KR', sans-serif;
+  --radius:   14px;
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh;padding:0 0 80px;}
+.app-header{background:var(--accent);padding:20px 20px 16px;position:sticky;top:0;z-index:100;}
+.app-header h1{color:#fff;font-size:1.05rem;font-weight:900;letter-spacing:-.02em;}
+.app-header p{color:rgba(255,255,255,.65);font-size:.72rem;margin-top:2px;}
+.form-selector{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 16px;position:sticky;top:64px;z-index:99;}
+.form-selector-label{font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-bottom:8px;}
+.tab-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;}
+.tab-btn{padding:10px 8px;border:1.5px solid var(--border);border-radius:10px;background:#faf9f7;font-family:var(--sans);font-size:.78rem;font-weight:700;color:var(--muted);cursor:pointer;transition:all .2s;text-align:center;line-height:1.4;}
+.tab-btn:hover{border-color:var(--accent2);color:var(--accent);}
+.tab-btn.active{background:var(--accent);border-color:var(--accent);color:#fff;}
+.tab-btn .tab-icon{display:block;font-size:1.1rem;margin-bottom:2px;}
+.tab-btn .tab-sub{display:block;font-size:.65rem;font-weight:400;opacity:.8;margin-top:1px;}
+.section-wrap{max-width:560px;margin:0 auto;padding:16px 16px 0;}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:12px;overflow:hidden;}
+.card-head{background:var(--accent);color:#fff;font-size:.68rem;font-weight:700;letter-spacing:.1em;text-transform:uppercase;padding:7px 16px;display:flex;align-items:center;gap:6px;}
+.card-body{padding:16px;}
+.field{margin-bottom:12px;}
+.field:last-child{margin-bottom:0;}
+.field label{display:block;font-size:.75rem;font-weight:700;color:var(--muted);margin-bottom:5px;}
+.req{color:var(--warn);margin-left:2px;}
+input[type=text],input[type=email],select,textarea{width:100%;border:1.5px solid var(--border);border-radius:8px;padding:10px 12px;font-family:var(--sans);font-size:.88rem;color:var(--text);background:#fdfcfb;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(45,106,79,.12);background:#fff;}
+textarea{resize:vertical;min-height:80px;line-height:1.6;}
+.select-wrap{position:relative;}
+.select-wrap::after{content:'▾';position:absolute;right:11px;top:50%;transform:translateY(-50%);color:var(--muted);pointer-events:none;font-size:.8rem;}
+.grid-2{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+@media(max-width:380px){.grid-2{grid-template-columns:1fr;}}
+.save-row{display:flex;align-items:center;justify-content:space-between;padding:6px 0 0;}
+.badge-saved{font-size:.68rem;font-family:var(--mono);color:var(--accent2);background:#f0faf4;border:1px solid #b7e4c7;border-radius:5px;padding:2px 8px;display:none;}
+.btn-clear{font-size:.68rem;color:var(--muted);background:none;border:none;cursor:pointer;text-decoration:underline;display:none;}
+.upload-zone{border:2px dashed var(--border);border-radius:10px;padding:28px 16px;text-align:center;cursor:pointer;transition:border-color .2s,background .2s;position:relative;}
+.upload-zone:hover,.upload-zone.drag-over{border-color:var(--accent2);background:rgba(82,183,136,.05);}
+.upload-zone input[type=file]{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%;}
+.upload-icon{font-size:2rem;margin-bottom:6px;}
+.upload-zone p{font-size:.8rem;color:var(--muted);line-height:1.6;}
+.upload-zone strong{color:var(--accent);}
+.progress-wrap{margin-top:10px;display:none;}
+.progress-bar{height:4px;background:var(--border);border-radius:3px;overflow:hidden;}
+.progress-inner{height:100%;width:0%;background:var(--accent);transition:width .3s;border-radius:3px;}
+.progress-label{font-size:.7rem;font-family:var(--mono);color:var(--muted);margin-top:4px;}
+#preview-wrap{display:none;margin-top:12px;}
+#preview-img{width:100%;max-height:200px;object-fit:contain;border-radius:8px;border:1px solid var(--border);background:#fafafa;}
+.preview-meta{display:flex;justify-content:space-between;align-items:center;margin-top:6px;gap:8px;}
+.preview-meta span{font-size:.7rem;font-family:var(--mono);color:var(--muted);flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.preview-btns{display:flex;gap:6px;flex-shrink:0;}
+.img-list{display:flex;flex-direction:column;gap:8px;margin-top:12px;}
+.img-item{display:flex;align-items:center;gap:10px;background:#faf9f7;border:1px solid var(--border);border-radius:8px;padding:8px 10px;cursor:grab;}
+.img-item:active{cursor:grabbing;}
+.img-item.dragging{opacity:.4;}
+.img-item.drag-over-item{border-color:var(--accent2);background:#f0faf4;}
+.img-thumb{width:44px;height:44px;object-fit:cover;border-radius:5px;flex-shrink:0;border:1px solid var(--border);}
+.img-item-info{flex:1;min-width:0;}
+.img-item-name{font-size:.75rem;font-weight:700;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+.img-item-size{font-size:.68rem;font-family:var(--mono);color:var(--muted);}
+.img-item-order{width:24px;height:24px;background:var(--accent);color:#fff;border-radius:50%;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.btn-img-remove{background:none;border:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:2px;flex-shrink:0;}
+.btn-img-remove:hover{color:var(--warn);}
+.btn-download-action{display:block;width:100%;margin-top:10px;padding:10px;background:#2d6a4f;color:#fff;border:none;border-radius:8px;font-family:var(--sans);font-size:.82rem;font-weight:700;cursor:pointer;text-align:center;box-shadow:0 2px 8px rgba(45,106,79,.15);transition:background .2s;}
+.btn-download-action:hover{background:#1b4332;}
+.btn-download-action:disabled{opacity:.5;cursor:not-allowed;background:var(--muted);}
+.info-box{background:#fffbf0;border:1px solid #f4d58d;border-radius:8px;padding:11px 13px;font-size:.78rem;color:#7c5c00;line-height:1.7;}
+.info-box b{color:#5c4000;}
+.btn-remove{font-size:.7rem;color:var(--warn);background:none;border:1px solid var(--warn);border-radius:6px;padding:3px 9px;cursor:pointer;}
+.btn-mini-dl{font-size:.7rem;color:var(--accent);background:none;border:1px solid var(--accent);border-radius:6px;padding:3px 9px;cursor:pointer;font-weight:700;}
+.btn-mini-dl:hover{background:rgba(45,106,79,.05);}
+.btn-submit{display:block;width:100%;max-width:560px;margin:16px auto 0;padding:15px;background:var(--accent);color:#fff;font-family:var(--sans);font-size:1rem;font-weight:900;border:none;border-radius:var(--radius);cursor:pointer;box-shadow:0 4px 20px rgba(45,106,79,.3);transition:background .2s,transform .1s;}
+.btn-submit:hover:not(:disabled){background:#1b4332;}
+.btn-submit:active:not(:disabled){transform:scale(.98);}
+.btn-submit:disabled{opacity:.45;cursor:not-allowed;}
+#overlay{display:none;position:fixed;inset:0;background:rgba(10,20,15,.72);backdrop-filter:blur(5px);z-index:1000;align-items:center;justify-content:center;padding:20px;}
+#overlay.show{display:flex;}
+.overlay-box{background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:26px 22px;max-width:400px;width:100%;box-shadow:0 24px 64px rgba(0,0,0,.3);animation:popIn .3s cubic-bezier(.34,1.56,.64,1);}
+@keyframes popIn{from{transform:scale(.85);opacity:0;}to{transform:scale(1);opacity:1;}}
+.overlay-title{font-size:1rem;font-weight:900;color:var(--accent);margin-bottom:16px;display:flex;align-items:center;gap:8px;}
+.step-list{list-style:none;display:flex;flex-direction:column;gap:11px;margin-bottom:18px;}
+.step-item{display:flex;align-items:flex-start;gap:10px;font-size:.86rem;line-height:1.55;}
+.step-num{flex-shrink:0;width:22px;height:22px;background:var(--accent);color:#fff;border-radius:50%;font-size:.68rem;font-weight:700;display:flex;align-items:center;justify-content:center;margin-top:1px;}
+.step-item b{color:var(--accent);}
+.btn-confirm{width:100%;padding:13px;background:var(--accent);color:#fff;font-family:var(--sans);font-size:.95rem;font-weight:900;border:none;border-radius:10px;cursor:pointer;transition:background .2s;}
+.btn-confirm:hover{background:#1b4332;}
+#toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%) translateY(60px);background:var(--text);color:#fff;border-radius:10px;padding:11px 20px;font-size:.82rem;opacity:0;transition:transform .3s cubic-bezier(.34,1.56,.64,1),opacity .3s;z-index:999;white-space:pre-line;text-align:center;max-width:88vw;pointer-events:none;}
+#toast.show{transform:translateX(-50%) translateY(0);opacity:1;}
+#toast.ok{background:var(--accent);}
+#toast.err{background:var(--warn);}
+canvas{display:none;}
+.hidden{display:none!important;}
+</style>
+</head>
+<body>
+
+<header class="app-header">
+  <h1>📋 세명대 과제 제출 도우미</h1>
+  <p>정보를 한 번 저장하면 다음부터 자동으로 불러옵니다</p>
+</header>
+
+<div class="form-selector">
+  <div class="form-selector-label">제출할 과제 선택</div>
+  <div class="tab-grid">
+    <button class="tab-btn active" data-form="flashcard"><span class="tab-icon">🖼️</span>플래시카드<span class="tab-sub">그림 파일 · 1MB</span></button>
+    <button class="tab-btn" data-form="saekim"><span class="tab-icon">📄</span>새김순서<span class="tab-sub">PDF · 10MB</span></button>
+    <button class="tab-btn" data-form="copilot"><span class="tab-icon">🤖</span>코파일럿 퀴즈<span class="tab-sub">이미지→PDF · 10MB</span></button>
+    <button class="tab-btn" data-form="praise"><span class="tab-icon">💬</span>칭찬댓글<span class="tab-sub">그림 파일 · 1MB</span></button>
+  </div>
+</div>
+
+<div class="section-wrap">
+  <div class="card">
+    <div class="card-head">👤 본인 정보</div>
+    <div class="card-body">
+      <div class="field">
+        <label>이메일<span class="req">*</span></label>
+        <input type="email" id="inp-email" placeholder="example@gmail.com" autocomplete="email">
+      </div>
+      <div class="grid-2">
+        <div class="field">
+          <label>성명<span class="req">*</span></label>
+          <input type="text" id="inp-name" placeholder="홍길동">
+        </div>
+        <div class="field">
+          <label>학번 (10자리)<span class="req">*</span></label>
+          <input type="text" id="inp-studentid" placeholder="2025112016" maxlength="10" inputmode="numeric">
+        </div>
+      </div>
+      <div class="save-row">
+        <span class="badge-saved" id="badge-saved">✓ 저장됨</span>
+        <button class="btn-clear" id="btn-clear">저장 초기화</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-head">📚 과목 / 주차 선택</div>
+    <div class="card-body">
+      <div class="field">
+        <label>과목/학년<span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="sel-subject"><option value="">— 선택하세요 —</option></select>
+        </div>
+      </div>
+      <div class="field hidden" id="wrap-subtask">
+        <label>세부 과제<span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="sel-subtask"><option value="">— 선택하세요 —</option></select>
+        </div>
+      </div>
+      <div class="field">
+        <label>제출 주차<span class="req">*</span></label>
+        <div class="select-wrap">
+          <select id="sel-week"><option value="">— 선택하세요 —</option></select>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="card-praise-text">
+    <div class="card-head">💬 칭찬 내용</div>
+    <div class="card-body">
+      <div class="field">
+        <label>칭찬한 발표자 성명<span class="req">*</span> <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(본인 제외, 최대 1인)</span></label>
+        <input type="text" id="inp-praise-name" placeholder="홍길동">
+      </div>
+      <div class="field">
+        <label>댓글 내용 (20자 이상)<span class="req">*</span></label>
+        <textarea id="inp-praise-content" placeholder="MS Teams 영상 밑에 입력한 칭찬 댓글 내용을 그대로 입력하세요"></textarea>
+        <div style="font-size:.68rem;color:var(--muted);margin-top:4px;font-family:var(--mono);" id="char-count">0자</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" id="card-image">
+    <div class="card-head">🖼️ 이미지 파일 <span style="font-weight:400;font-size:.75rem;opacity:.8">(선택 · 자동 압축)</span></div>
+    <div class="card-body">
+      <div class="upload-zone" id="upload-zone">
+        <input type="file" id="inp-file" accept="image/*" capture="environment">
+        <div class="upload-icon">📎</div>
+        <p><strong>탭하여 이미지 선택</strong><br>선택 즉시 자동 압축 · JPG/PNG</p>
+      </div>
+      <div class="progress-wrap" id="progress-wrap">
+        <div class="progress-bar"><div class="progress-inner" id="progress-inner"></div></div>
+        <div class="progress-label" id="progress-label"></div>
+      </div>
+      <div id="preview-wrap">
+        <img id="preview-img" src="" alt="">
+        <div class="preview-meta">
+          <span id="file-info"></span>
+          <div class="preview-btns">
+            <button class="btn-mini-dl" id="btn-download-img">다운로드</button>
+            <button class="btn-remove" id="btn-remove-img">삭제</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card hidden" id="card-copilot">
+    <div class="card-head">🤖 이미지 → PDF 변환 <span style="font-weight:400;font-size:.75rem;opacity:.8">(선택 · 순서대로 변환)</span></div>
+    <div class="card-body">
+      <div class="upload-zone" id="copilot-zone" style="margin-bottom:0">
+        <input type="file" id="inp-copilot" accept="image/*" multiple>
+        <div class="upload-icon">🖼️</div>
+        <p><strong>이미지 파일 선택</strong> (여러 장 가능)<br>드래그로 순서 조정 · 선택 순서대로 PDF 변환</p>
+      </div>
+      <div class="img-list" id="img-list"></div>
+      <button class="btn-download-action hidden" id="btn-build-pdf">📄 PDF 다운로드 받기</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-body">
+      <div class="info-box" id="info-box">
+        아래 버튼을 누르면 구글 폼이 열립니다.<br>
+        <b>이메일 항목</b>은 폼에서 직접 입력해주세요.
+      </div>
+    </div>
+  </div>
+</div>
+
+<button class="btn-submit" id="btn-submit">폼 열기</button>
+
+<div id="overlay">
+  <div class="overlay-box">
+    <div class="overlay-title">📋 제출 방법 안내</div>
+    <ul class="step-list" id="overlay-steps"></ul>
+    <button class="btn-confirm" id="btn-confirm">확인했습니다 →</button>
+  </div>
+</div>
+
+<div id="toast"></div>
+<canvas id="canvas"></canvas>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+
+// ── 폼 설정 ──────────────────────────────────
+const FORMS = {
+  flashcard: {
+    label: "플래시카드",
+    formId: "1FAIpQLSdDC_mEJk1uk5Hd37kEvtpBKV2k-UA3H36EXPh0JBwQFPm3ZA",
+    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", subtask:"entry.792164103_sentinel", week:"entry.404105125_sentinel" },
+    subjects: ["한의학용어와한문1 (예1)","의학한문1 (예2)","원전2 (본1)"],
+    subtasks: { "한의학용어와한문1 (예1)":["한의학용어(한문 제외)","한문","한자급수","의학용어(최수지 교수)"], "의학한문1 (예2)":[], "원전2 (본1)":[] },
+    weeks: ["1주차","2주차","3주차","4주차","5주차","6주차","7주차","9주차","10주차","11주차","12주차","13주차","14주차"],
+    fileType: "image",
+  },
+  saekim: {
+    label: "새김순서",
+    formId: "1FAIpQLSe5Bcs04PoN0iNyoc6n_PG2D9kN7ZXwyGbM-yrwx2HyzH7yCA",
+    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", week:"entry.654998830_sentinel" },
+    subjects: ["한의학용어와한문1 (예1)","의학한문1 (예2)","원전2 (본1)"],
+    weeks: ["1주차","2주차","3주차","4주차","5주차","6주차","7주차","10주차","11주차","12주차","13주차"],
+    fileType: "pdf",
+  },
+  copilot: {
+    label: "코파일럿 퀴즈",
+    formId: "1FAIpQLSephhI_0h4m1FVVsVlLl33MvUS46NgNOWHlVfYeYjqT6Z07Vw",
+    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", week:"entry.1666881962_sentinel" },
+    subjects: ["한의학용어와한문1 (예1)","의학한문1 (예2)","의료면담학","원전2"],
+    weeks: ["1주차","2주차","3주차","4주차","5주차","6주차","7주차","9주차","10주차","11주차","12주차","13주차","14주차"],
+    fileType: "copilot",
+  },
+  praise: {
+    label: "칭찬댓글",
+    formId: "1FAIpQLSeJyTU69sCw2A9RWp4sJ46AqpHyIj5MS2yB4-m4qLB0yu3ooA",
+    entries: { name:"entry.1683100470", studentId:"entry.1492916867", subject:"entry.1540471442_sentinel", week:"entry.654998830_sentinel", praiseTarget:"entry.1817956812", praiseContent:"entry.1894595127" },
+    subjects: ["한의학용어와한문1 (예1)","의학한문1 (예2)","의료면담학 (예2)","원전2 (본1)"],
+    weeks: ["1주차","2주차","3주차","4주차","5주차","6주차","7주차","8주차","9주차","10주차","11주차","12주차","13주차","14주차","15주차","16주차"],
+    fileType: "image",
+  },
+};
+
+const FORM_BASE = id => `https://docs.google.com/forms/d/e/${id}/viewform`;
+
+// ── 압축 설정 ─────────────────────────────────
+const MAX_BYTES = 900 * 1024;
+const MAX_WIDTH = 1600;
+const INIT_QUAL = 0.85;
+const MIN_QUAL  = 0.30;
+
+// ── 상태 ──────────────────────────────────────
+let currentForm    = "flashcard";
+let compressedBlob = null;
+let compressedName = "";
+let copilotImages  = [];
+let pendingFormUrl = null;
+
+// ── 초기화 ────────────────────────────────────
+loadSaved();
+switchForm("flashcard");
+
+// ── LocalStorage ──────────────────────────────
+function loadSaved() {
+  const e = localStorage.getItem("fc_email");
+  const n = localStorage.getItem("fc_name");
+  const s = localStorage.getItem("fc_sid");
+  if (e) document.getElementById("inp-email").value     = e;
+  if (n) document.getElementById("inp-name").value      = n;
+  if (s) document.getElementById("inp-studentid").value = s;
+  if (e||n||s) {
+    document.getElementById("badge-saved").style.display = "inline-block";
+    document.getElementById("btn-clear").style.display   = "inline-block";
+  }
+}
+document.getElementById("btn-clear").addEventListener("click", () => {
+  if (!confirm("저장된 본인 정보를 초기화할까요?")) return;
+  ["fc_email","fc_name","fc_sid"].forEach(k => localStorage.removeItem(k));
+  ["inp-email","inp-name","inp-studentid"].forEach(id => document.getElementById(id).value = "");
+  document.getElementById("badge-saved").style.display = "none";
+  document.getElementById("btn-clear").style.display   = "none";
+  showToast("초기화되었습니다","ok");
+});
+
+// ── 폼 전환 ───────────────────────────────────
+document.querySelectorAll(".tab-btn").forEach(btn => {
+  btn.addEventListener("click", () => switchForm(btn.dataset.form));
+});
+
+function switchForm(key) {
+  currentForm = key;
+  const cfg = FORMS[key];
+
+  document.querySelectorAll(".tab-btn").forEach(b =>
+    b.classList.toggle("active", b.dataset.form === key));
+
+  const selSubj = document.getElementById("sel-subject");
+  selSubj.innerHTML = '<option value="">— 선택하세요 —</option>';
+  cfg.subjects.forEach(s => {
+    const o = document.createElement("option");
+    o.value = o.textContent = s;
+    selSubj.appendChild(o);
+  });
+
+  const selWeek = document.getElementById("sel-week");
+  selWeek.innerHTML = '<option value="">— 선택하세요 —</option>';
+  cfg.weeks.forEach(w => {
+    const o = document.createElement("option");
+    o.value = o.textContent = w;
+    selWeek.appendChild(o);
+  });
+
+  document.getElementById("wrap-subtask").classList.toggle("hidden", key !== "flashcard");
+  updateSubtasks();
+
+  document.getElementById("card-image").classList.toggle("hidden",  key !== "flashcard" && key !== "praise");
+  document.getElementById("card-copilot").classList.toggle("hidden", key !== "copilot");
+  document.getElementById("card-praise-text").classList.toggle("hidden", key !== "praise");
+
+  const infoBox = document.getElementById("info-box");
+  if (key === "copilot") {
+    infoBox.innerHTML = "이미지를 추가한 뒤 <b>[PDF 다운로드 받기]</b> 버튼을 눌러 저장하세요.<br>이후 폼 열기를 누르고 <b>이메일 항목</b>을 입력해주세요.";
+  } else if (key === "saekim") {
+    infoBox.innerHTML = "새김순서 PDF를 준비한 뒤 폼 열기를 누르세요.<br><b>이메일 항목</b>은 폼에서 직접 입력해야 합니다.";
+  } else {
+    infoBox.innerHTML = "이미지를 등록하면 자동으로 압축됩니다. <b>[다운로드]</b> 버튼으로 저장한 뒤 폼 열기를 진행하세요.";
+  }
+  resetAllFiles();
+}
+
+document.getElementById("sel-subject").addEventListener("change", updateSubtasks);
+function updateSubtasks() {
+  if (currentForm !== "flashcard") return;
+  const subj  = document.getElementById("sel-subject").value;
+  const tasks = (FORMS.flashcard.subtasks[subj] || []);
+  const sel   = document.getElementById("sel-subtask");
+  sel.innerHTML = '<option value="">— 선택하세요 —</option>';
+  tasks.forEach(t => {
+    const o = document.createElement("option");
+    o.value = o.textContent = t;
+    sel.appendChild(o);
+  });
+  document.getElementById("wrap-subtask").classList.toggle("hidden",
+    currentForm !== "flashcard" || tasks.length === 0);
+}
+
+document.getElementById("inp-praise-content").addEventListener("input", function() {
+  document.getElementById("char-count").textContent = this.value.length + "자";
+});
+
+// ── 이미지 압축 ───────────────────────────────
+const zone = document.getElementById("upload-zone");
+zone.addEventListener("dragover", e => { e.preventDefault(); zone.classList.add("drag-over"); });
+zone.addEventListener("dragleave", () => zone.classList.remove("drag-over"));
+zone.addEventListener("drop", e => {
+  e.preventDefault(); zone.classList.remove("drag-over");
+  if (e.dataTransfer.files[0]) handleImageFile(e.dataTransfer.files[0]);
+});
+document.getElementById("inp-file").addEventListener("change", function() {
+  if (this.files[0]) handleImageFile(this.files[0]);
+});
+document.getElementById("btn-remove-img").addEventListener("click", resetImageFile);
+document.getElementById("btn-download-img").addEventListener("click", function() {
+  if (!compressedBlob) return;
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(compressedBlob);
+  a.download = compressedName;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  showToast("이미지가 다운로드되었습니다","ok");
+});
+
+function handleImageFile(file) {
+  if (!file.type.startsWith("image/")) { showToast("이미지 파일만 선택하세요","err"); return; }
+  const sid  = document.getElementById("inp-studentid").value.trim() || "학번미입력";
+  const week = document.getElementById("sel-week").value || "주차미선택";
+  compressedName = currentForm + "_" + sid + "_" + week + ".jpg";
+
+  const pw = document.getElementById("progress-wrap");
+  const pi = document.getElementById("progress-inner");
+  const pl = document.getElementById("progress-label");
+  pw.style.display = "block";
+  setProgress(pi, pl, 10, "원본 읽는 중...");
+
+  const reader = new FileReader();
+  reader.onload = e => {
+    const img = new Image();
+    img.onload = () => {
+      const needsResize   = img.width > MAX_WIDTH;
+      const needsCompress = file.size > MAX_BYTES;
+      if (!needsResize && !needsCompress) {
+        compressedBlob = file;
+        const kb = (file.size / 1024).toFixed(1);
+        setProgress(pi, pl, 100, "압축 불필요 · " + kb + " KB");
+        document.getElementById("preview-img").src = URL.createObjectURL(file);
+        document.getElementById("preview-wrap").style.display = "block";
+        document.getElementById("file-info").textContent = file.name + " (" + kb + " KB)";
+        return;
+      }
+      setProgress(pi, pl, 40, "리사이징 중...");
+      const cv = document.getElementById("canvas");
+      let w = img.width, h = img.height;
+      if (w > MAX_WIDTH) { h = Math.round(h * MAX_WIDTH / w); w = MAX_WIDTH; }
+      cv.width = w; cv.height = h;
+      cv.getContext("2d").drawImage(img, 0, 0, w, h);
+      setProgress(pi, pl, 65, "품질 최적화 중...");
+      compressLoop(cv, INIT_QUAL, (blob, q) => {
+        const usedOrig = blob.size >= file.size;
+        const final    = usedOrig ? file : blob;
+        compressedBlob = final;
+        const kb = (final.size / 1024).toFixed(1);
+        setProgress(pi, pl, 100, usedOrig
+          ? "원본 유지 · " + kb + " KB"
+          : "압축 완료 · " + kb + " KB (품질 " + Math.round(q * 100) + "%)");
+        document.getElementById("preview-img").src = URL.createObjectURL(final);
+        document.getElementById("preview-wrap").style.display = "block";
+        document.getElementById("file-info").textContent = "압축됨: " + kb + " KB";
+      });
+    };
+    img.src = e.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+
+function resetImageFile() {
+  compressedBlob = null; compressedName = "";
+  document.getElementById("preview-wrap").style.display  = "none";
+  document.getElementById("progress-wrap").style.display = "none";
+  document.getElementById("inp-file").value = "";
+}
+function setProgress(inner, label, pct, text) { inner.style.width = pct + "%"; label.textContent = text; }
+function compressLoop(cv, q, cb) {
+  cv.toBlob(blob => {
+    if (blob.size <= MAX_BYTES || q <= MIN_QUAL) { cb(blob, q); return; }
+    compressLoop(cv, Math.max(q - 0.08, MIN_QUAL), cb);
+  }, "image/jpeg", q);
+}
+
+// ── 코파일럿: 다중 이미지 → 고해상도 PDF ────────
+const copilotZone = document.getElementById("copilot-zone");
+copilotZone.addEventListener("dragover", e => { e.preventDefault(); copilotZone.classList.add("drag-over"); });
+copilotZone.addEventListener("dragleave", () => copilotZone.classList.remove("drag-over"));
+copilotZone.addEventListener("drop", e => {
+  e.preventDefault(); copilotZone.classList.remove("drag-over");
+  addCopilotImages([...e.dataTransfer.files]);
+});
+document.getElementById("inp-copilot").addEventListener("change", function() {
+  addCopilotImages([...this.files]); this.value = "";
+});
+
+function addCopilotImages(files) {
+  files.filter(f => f.type.startsWith("image/")).forEach(file => {
+    const reader = new FileReader();
+    reader.onload = e => {
+      copilotImages.push({ file, thumb: e.target.result, name: file.name, size: file.size });
+      renderImgList();
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function renderImgList() {
+  const list = document.getElementById("img-list");
+  list.innerHTML = "";
+  copilotImages.forEach((img, i) => {
+    const item = document.createElement("div");
+    item.className = "img-item";
+    item.draggable = true;
+    item.dataset.idx = i;
+    item.innerHTML =
+      '<div class="img-item-order">' + (i+1) + '</div>' +
+      '<img class="img-thumb" src="' + img.thumb + '" alt="">' +
+      '<div class="img-item-info">' +
+        '<div class="img-item-name">' + img.name + '</div>' +
+        '<div class="img-item-size">' + (img.size/1024).toFixed(1) + ' KB</div>' +
+      '</div>' +
+      '<button class="btn-img-remove" data-idx="' + i + '">✕</button>';
+    item.addEventListener("dragstart", e => { e.dataTransfer.setData("text/plain", i); item.classList.add("dragging"); });
+    item.addEventListener("dragend",   () => item.classList.remove("dragging"));
+    item.addEventListener("dragover",  e => { e.preventDefault(); item.classList.add("drag-over-item"); });
+    item.addEventListener("dragleave", () => item.classList.remove("drag-over-item"));
+    item.addEventListener("drop", e => {
+      e.preventDefault(); item.classList.remove("drag-over-item");
+      const from = parseInt(e.dataTransfer.getData("text/plain")), to = i;
+      if (from === to) return;
+      copilotImages.splice(to, 0, copilotImages.splice(from, 1)[0]);
+      renderImgList();
+    });
+    item.querySelector(".btn-img-remove").addEventListener("click", e => {
+      e.stopPropagation();
+      copilotImages.splice(parseInt(e.currentTarget.dataset.idx), 1);
+      renderImgList();
+    });
+    list.appendChild(item);
+  });
+  document.getElementById("btn-build-pdf").classList.toggle("hidden", copilotImages.length === 0);
+}
+
+document.getElementById("btn-build-pdf").addEventListener("click", async function() {
+  if (copilotImages.length === 0) return;
+  const sid  = document.getElementById("inp-studentid").value.trim() || "학번미입력";
+  const week = document.getElementById("sel-week").value || "주차미선택";
+  this.disabled = true;
+  this.textContent = "⏳ PDF 변환 중...";
+  try {
+    const blob = await imagesToPdf(copilotImages);
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(blob);
+    a.download = "copilot_quiz_" + sid + "_" + week + ".pdf";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    showToast("PDF 다운로드 완료","ok");
+  } catch(err) {
+    showToast("PDF 변환 실패: " + err.message, "err");
+  } finally {
+    this.disabled = false;
+    this.textContent = "📄 PDF 다운로드 받기";
+  }
+});
+
+// ── 고해상도 PDF 생성 ─────────────────────────
+// 핵심 변경: 이미지를 A4 포인트 단위로 축소하지 않고
+// 원본 픽셀 해상도를 그대로 유지하며 PDF MediaBox만 A4로 설정.
+// 72dpi 기준 A4 = 595×842pt, 150dpi = 1240×1754px, 300dpi = 2480×3508px
+// 이미지 원본 픽셀을 PDF 포인트로 변환: 1pt = 1/72인치
+// 원본을 그대로 넣되 MediaBox는 원본 픽셀 크기로 설정 → 고해상도 유지
+async function imagesToPdf(images) {
+  const cv  = document.getElementById("canvas");
+  const ctx = cv.getContext("2d");
+  const pages = [];
+
+  for (const img of images) {
+    await new Promise(resolve => {
+      const image = new Image();
+      image.onload = () => {
+        // 원본 해상도 그대로 사용 (축소 없음)
+        const w = image.width;
+        const h = image.height;
+        cv.width  = w;
+        cv.height = h;
+        ctx.fillStyle = "#fff";
+        ctx.fillRect(0, 0, w, h);
+        ctx.drawImage(image, 0, 0, w, h);
+        // 품질 0.95로 높임 (고해상도)
+        cv.toBlob(blob => {
+          const fr = new FileReader();
+          fr.onload = e => {
+            pages.push({ b64: e.target.result.split(",")[1], w, h });
+            resolve();
+          };
+          fr.readAsDataURL(blob);
+        }, "image/jpeg", 0.95);
+      };
+      image.src = img.thumb;
+    });
+  }
+  return buildPdfFromPages(pages);
+}
+
+function buildPdfFromPages(pages) {
+  const NL    = "\n";
+  const parts = [];
+  let bytePos = 0;
+  const xref  = {};
+
+  function s2u8(str) {
+    const a = new Uint8Array(str.length);
+    for (let i = 0; i < str.length; i++) a[i] = str.charCodeAt(i) & 0xFF;
+    return a;
+  }
+  function b642u8(b64) {
+    const raw = atob(b64);
+    const a = new Uint8Array(raw.length);
+    for (let i = 0; i < raw.length; i++) a[i] = raw.charCodeAt(i);
+    return a;
+  }
+  function emit(data) {
+    const u8 = typeof data === "string" ? s2u8(data) : data;
+    parts.push(u8); bytePos += u8.length;
+  }
+  function obj(id, dict) {
+    xref[id] = bytePos;
+    emit(id + " 0 obj" + NL + dict + NL + "endobj" + NL);
+  }
+  function streamObj(id, dictStr, body) {
+    xref[id] = bytePos;
+    emit(id + " 0 obj" + NL + dictStr + NL + "stream" + NL);
+    emit(typeof body === "string" ? s2u8(body) : body);
+    emit(NL + "endstream" + NL + "endobj" + NL);
+  }
+
+  emit("%PDF-1.4" + NL);
+
+  const n     = pages.length;
+  const imgId = i => 3 + i * 3;
+  const pgId  = i => 4 + i * 3;
+  const csId  = i => 5 + i * 3;
+  const total = 2 + n * 3;
+  const kids  = pages.map((_, i) => pgId(i) + " 0 R").join(" ");
+
+  obj(1, "<< /Type /Catalog /Pages 2 0 R >>");
+  obj(2, "<< /Type /Pages /Kids [" + kids + "] /Count " + n + " >>");
+
+  for (let i = 0; i < n; i++) {
+    const { b64, w, h } = pages[i];
+    const imgBytes = b642u8(b64);
+
+    // Image XObject
+    xref[imgId(i)] = bytePos;
+    emit(imgId(i) + " 0 obj" + NL);
+    emit("<< /Type /XObject /Subtype /Image /Width " + w + " /Height " + h);
+    emit(" /ColorSpace /DeviceRGB /BitsPerComponent 8");
+    emit(" /Filter /DCTDecode /Length " + imgBytes.length + " >>" + NL);
+    emit("stream" + NL);
+    emit(imgBytes);
+    emit(NL + "endstream" + NL + "endobj" + NL);
+
+    // Page: MediaBox를 원본 픽셀 크기로 설정 → PDF 뷰어가 실제 해상도로 렌더링
+    obj(pgId(i),
+      "<< /Type /Page /Parent 2 0 R" +
+      " /MediaBox [0 0 " + w + " " + h + "]" +
+      " /Contents " + csId(i) + " 0 R" +
+      " /Resources << /XObject << /Im" + i + " " + imgId(i) + " 0 R >> >> >>"
+    );
+
+    // Content stream: 이미지를 페이지 전체에 꽉 채움
+    const sc = "q " + w + " 0 0 " + h + " 0 0 cm /Im" + i + " Do Q";
+    streamObj(csId(i), "<< /Length " + sc.length + " >>", sc);
+  }
+
+  // xref 테이블
+  const xrefPos = bytePos;
+  emit("xref" + NL + "0 " + (total + 1) + NL);
+  emit("0000000000 65535 f " + NL);
+  for (let i = 1; i <= total; i++) {
+    emit(String(xref[i] || 0).padStart(10, "0") + " 00000 n " + NL);
+  }
+  emit("trailer" + NL +
+    "<< /Size " + (total + 1) + " /Root 1 0 R >>" + NL +
+    "startxref" + NL + xrefPos + NL + "%%EOF");
+
+  const totalBytes = parts.reduce((s, p) => s + p.length, 0);
+  const out = new Uint8Array(totalBytes);
+  let off = 0;
+  for (const p of parts) { out.set(p, off); off += p.length; }
+  return new Blob([out], { type: "application/pdf" });
+}
+
+function resetAllFiles() {
+  resetImageFile();
+  copilotImages = [];
+  renderImgList();
+}
+
+// ── 제출 버튼 ─────────────────────────────────
+document.getElementById("btn-submit").addEventListener("click", function() {
+  const email = document.getElementById("inp-email").value.trim();
+  const name  = document.getElementById("inp-name").value.trim();
+  const sid   = document.getElementById("inp-studentid").value.trim();
+  const subj  = document.getElementById("sel-subject").value;
+  const week  = document.getElementById("sel-week").value;
+  const cfg   = FORMS[currentForm];
+
+  if (!email || !email.includes("@")) { showToast("올바른 이메일을 입력하세요","err"); return; }
+  if (!name)  { showToast("성명을 입력하세요","err"); return; }
+  if (!/^\d{10}$/.test(sid)) { showToast("학번은 10자리 숫자여야 합니다","err"); return; }
+  if (!subj)  { showToast("과목/학년을 선택하세요","err"); return; }
+
+  let subtask = "";
+  if (currentForm === "flashcard") {
+    const tasks = cfg.subtasks[subj] || [];
+    if (tasks.length > 0) {
+      subtask = document.getElementById("sel-subtask").value;
+      if (!subtask) { showToast("세부 과제를 선택하세요","err"); return; }
+    }
+  }
+  if (!week) { showToast("제출 주차를 선택하세요","err"); return; }
+
+  let praiseTarget = "", praiseContent = "";
+  if (currentForm === "praise") {
+    praiseTarget  = document.getElementById("inp-praise-name").value.trim();
+    praiseContent = document.getElementById("inp-praise-content").value.trim();
+    if (!praiseTarget) { showToast("칭찬한 발표자 성명을 입력하세요","err"); return; }
+    if (praiseContent.length < 20) { showToast("댓글 내용은 20자 이상 입력하세요","err"); return; }
+  }
+
+  localStorage.setItem("fc_email", email);
+  localStorage.setItem("fc_name",  name);
+  localStorage.setItem("fc_sid",   sid);
+  document.getElementById("badge-saved").style.display = "inline-block";
+  document.getElementById("btn-clear").style.display   = "inline-block";
+
+  const strip = key => key ? key.replace("_sentinel", "") : key;
+  const params = new URLSearchParams();
+  params.set("emailAddress", email);
+  params.set(cfg.entries.name, name);
+  params.set(cfg.entries.studentId, sid);
+  params.set(strip(cfg.entries.subject), subj);
+  if (cfg.entries.subtask && subtask) params.set(strip(cfg.entries.subtask), subtask);
+  params.set(strip(cfg.entries.week), week);
+  if (currentForm === "praise") {
+    params.set(cfg.entries.praiseTarget,  praiseTarget);
+    params.set(cfg.entries.praiseContent, praiseContent);
+  }
+
+  // &usp=pp_url → 이전 작성중 폼 복원 메시지 표시 안 함
+  pendingFormUrl = FORM_BASE(cfg.formId) + "?" + params.toString() + "&usp=pp_url";
+
+  buildOverlay();
+  document.getElementById("overlay").classList.add("show");
+});
+
+function buildOverlay() {
+  const step2 = currentForm === "praise"
+    ? "<b>이메일</b> 입력 후 <b>다음</b>을 눌러주세요.<br>과목 선택 이후 섹션은 직접 입력이 필요합니다"
+    : "<b>이메일</b> 항목을 직접 입력하고 <b>다음</b>을 눌러 마지막 페이지로 이동하세요";
+  document.getElementById("overlay-steps").innerHTML =
+    '<li class="step-item"><span class="step-num">1</span><span><b>확인했습니다</b>를 눌러 구글 폼으로 이동하세요</span></li>' +
+    '<li class="step-item"><span class="step-num">2</span><span>' + step2 + '</span></li>' +
+    '<li class="step-item"><span class="step-num">3</span><span>마지막 페이지에서 다운로드해둔 파일을 첨부하고 <b>제출</b>을 완료하세요</span></li>';
+}
+
+document.getElementById("btn-confirm").addEventListener("click", function() {
+  document.getElementById("overlay").classList.remove("show");
+  if (pendingFormUrl) {
+    const a = document.createElement("a");
+    a.href = pendingFormUrl; a.target = "_blank"; a.rel = "noopener";
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+    pendingFormUrl = null;
+  }
+});
+
+// ── 토스트 ────────────────────────────────────
+let toastTimer;
+function showToast(msg, type) {
+  const el = document.getElementById("toast");
+  el.textContent = msg; el.className = "show " + (type || "");
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.className = "", type === "ok" ? 3500 : 2800);
+}
+
+}); // DOMContentLoaded
+</script>
+</body>
+</html>
