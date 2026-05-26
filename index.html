@@ -159,9 +159,11 @@ canvas{display:none;}
     <div class="card-head">📚 과목 / 주차 선택</div>
     <div class="card-body">
       <div class="field">
-        <label>과목/학년<span class="req">*</span></label>
+        <label>과목/학년 <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(고정)</span></label>
         <div class="select-wrap">
-          <select id="sel-subject"><option value="">— 선택하세요 —</option></select>
+          <select id="sel-subject" disabled style="opacity:1;color:var(--text);background:#f0faf4;cursor:default;border-color:#b7e4c7;">
+            <option value="">— 선택하세요 —</option>
+          </select>
         </div>
       </div>
       <div class="field hidden" id="wrap-subtask">
@@ -171,9 +173,11 @@ canvas{display:none;}
         </div>
       </div>
       <div class="field">
-        <label>제출 주차<span class="req">*</span></label>
+        <label>제출 주차 <span style="font-size:.68rem;font-weight:400;color:var(--muted)">(자동 선택)</span></label>
         <div class="select-wrap">
-          <select id="sel-week"><option value="">— 선택하세요 —</option></select>
+          <select id="sel-week" disabled style="opacity:1;color:var(--text);background:#f0faf4;cursor:default;border-color:#b7e4c7;">
+            <option value="">— 선택하세요 —</option>
+          </select>
         </div>
       </div>
     </div>
@@ -319,6 +323,7 @@ let pendingFormUrl = null;
 // ── 초기화 ────────────────────────────────────
 loadSaved();
 switchForm("flashcard");
+autoSelectWeek();
 
 // ── LocalStorage ──────────────────────────────
 function loadSaved() {
@@ -343,6 +348,29 @@ document.getElementById("btn-clear").addEventListener("click", () => {
 });
 
 // ── 폼 전환 ───────────────────────────────────
+// ── 자동 주차 선택 ──────────────────────────
+// 1주차 시작 월요일: 2026-03-02
+// 매주 월요일마다 주차가 바뀜
+function getCurrentWeek() {
+  const week1 = new Date("2026-03-02T00:00:00");
+  const now   = new Date();
+  const diff  = Math.floor((now - week1) / (7 * 24 * 60 * 60 * 1000));
+  return Math.max(1, diff + 1);
+}
+
+function autoSelectWeek() {
+  const week    = getCurrentWeek();
+  const weekStr = week + "주차";
+  const sel     = document.getElementById("sel-week");
+  // 현재 폼의 주차 목록에 해당 주차가 있으면 자동 선택
+  for (let i = 0; i < sel.options.length; i++) {
+    if (sel.options[i].value === weekStr) {
+      sel.value = weekStr;
+      break;
+    }
+  }
+}
+
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => switchForm(btn.dataset.form));
 });
@@ -361,6 +389,12 @@ function switchForm(key) {
     o.value = o.textContent = s;
     selSubj.appendChild(o);
   });
+  // 한의학용어와한문1 (예1) 자동 고정 선택
+  const defaultSubj = "한의학용어와한문1 (예1)";
+  if ([...selSubj.options].some(o => o.value === defaultSubj)) {
+    selSubj.value = defaultSubj;
+    updateSubtasks(); // 세부과제도 갱신
+  }
 
   const selWeek = document.getElementById("sel-week");
   selWeek.innerHTML = '<option value="">— 선택하세요 —</option>';
@@ -369,6 +403,7 @@ function switchForm(key) {
     o.value = o.textContent = w;
     selWeek.appendChild(o);
   });
+  autoSelectWeek(); // 폼 전환 시 현재 주차 자동 선택
 
   document.getElementById("wrap-subtask").classList.toggle("hidden", key !== "flashcard");
   updateSubtasks();
@@ -782,14 +817,54 @@ document.getElementById("btn-submit").addEventListener("click", function() {
 });
 
 function buildOverlay() {
-  const step2 = currentForm === "praise"
-    ? "<b>이메일</b> 입력 후 <b>다음</b>을 눌러주세요.<br>과목 선택 이후 섹션은 직접 입력이 필요합니다"
-    : "<b>이메일</b> 항목을 직접 입력하고 <b>다음</b>을 눌러 마지막 페이지로 이동하세요";
+  const emailVal = document.getElementById("inp-email").value.trim();
+  const step2 = "<b>이메일</b> 항목을 직접 입력하고 <b>다음</b>을 눌러 마지막 페이지로 이동하세요";
+  const emailChip = emailVal
+    ? '<span id="copy-email-btn" style="' +
+      'display:inline-flex;align-items:center;gap:5px;margin-top:6px;' +
+      'padding:5px 12px;background:#f0faf4;color:#2d6a4f;' +
+      'border:1.5px solid #52b788;border-radius:20px;font-size:.78rem;' +
+      'cursor:pointer;font-family:var(--sans);font-weight:700;' +
+      'user-select:none;-webkit-user-select:none' +
+      '">📋 ' + emailVal + '</span>'
+    : '';
   document.getElementById("overlay-steps").innerHTML =
     '<li class="step-item"><span class="step-num">1</span><span><b>확인했습니다</b>를 눌러 구글 폼으로 이동하세요<br><span style="font-size:.78rem;color:var(--muted)">⚠️ 초안 팝업이 뜨면 <b>계속</b>을 누르세요</span></span></li>' +
-    '<li class="step-item"><span class="step-num">2</span><span>' + step2 + '</span></li>' +
+    '<li class="step-item"><span class="step-num">2</span><span>' + step2 + '<br>' + emailChip + '</span></li>' +
     '<li class="step-item"><span class="step-num">3</span><span>마지막 페이지에서 다운로드해둔 파일을 첨부하고 <b>제출</b>을 완료하세요</span></li>';
+
+  // innerHTML 주입 후 이벤트 직접 등록 (onclick 속성 대신)
+  const chipEl = document.getElementById("copy-email-btn");
+  if (chipEl) {
+    chipEl.addEventListener("click", function() {
+      const email = emailVal;
+      if (!email) return;
+      const origHTML = chipEl.innerHTML;
+      const done = () => {
+        chipEl.innerHTML = "✅ 복사됨!";
+        setTimeout(() => { chipEl.innerHTML = origHTML; }, 2000);
+        showToast("이메일이 복사되었습니다","ok");
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(email).then(done).catch(() => {
+          const ta = document.createElement("textarea");
+          ta.value = email;
+          document.body.appendChild(ta); ta.select();
+          document.execCommand("copy"); document.body.removeChild(ta);
+          done();
+        });
+      } else {
+        const ta = document.createElement("textarea");
+        ta.value = email;
+        document.body.appendChild(ta); ta.select();
+        document.execCommand("copy"); document.body.removeChild(ta);
+        done();
+      }
+    });
+  }
 }
+
+
 
 // iOS Safari 호환: <a> 태그의 href를 mousedown/touchstart 시점에 미리 설정
 // → 클릭 이벤트 발생 전에 href가 확정되어 팝업 차단 없이 새 탭 열림
